@@ -13,15 +13,21 @@ if ARGV[0].nil?
 else
   serial_port = ARGV[0]
 end
-p serial_port
-exit 0
 serial_bautrate = 115200
 
 # シリアル等の外部とのデータのやりとりについて1バイトで行う
 Encoding.default_external = 'ASCII-8BIT'
 
 # シリアル接続
-$sp = SerialPort.new(serial_port, serial_bautrate)
+begin
+  $sp = SerialPort.new(serial_port, serial_bautrate)
+rescue => e
+  STDERR.puts 'cannot open port.'
+  STDERR.puts e.to_s
+  exit 1
+end
+
+puts 'connected.'
 
 # サーボの角度変更コマンド生成
 def make_angle_command(sid, angle)
@@ -80,6 +86,7 @@ end
 
 # コマンド送信（データの内容チェックなし）
 def send_data(command_data)
+  p command_data
   data_str = ""
   for data in command_data
     data_str << data.chr
@@ -119,17 +126,21 @@ Thread.new{
 
 # メインループ
 loop do
-  key = gets.chomp.to_i
-  # 首振り(サーボID:2)
+  print '1-5: '
+  key = STDIN.gets.to_i
   if (1..3).include? key
+    # 首振り(サーボID:2)
     send_data(make_angle_command(2, (key - 2) * 30))
-    #sleep(1)
-  end
-  # 歩行
-  if key == 4
+    sleep(0.5)
+  elsif key == 4
+    # 歩行
     send_data(make_walk_command(50, 0))
-    #sleep(1)
-  end
+    sleep(0.5)
+  elsif key == 5
+    $sp.close
+    puts 'connection closed.'
+    exit 0
+  end  
 end
 
 $sp.close
