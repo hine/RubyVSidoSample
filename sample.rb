@@ -8,10 +8,13 @@ COMMAND_OP_ANGLE = 0x6f
 COMMAND_OP_WALK = 0x74
 
 # シリアル設定
-serial_port = ARGV[0]
+if ARGV[0].nil?
+  serial_port = '/dev/tty.SBDBT-0009dd40dc14-SPP'
+else
+  serial_port = ARGV[0]
+end
 p serial_port
 exit 0
-#serial_port = '/dev/tty.SBDBT-0009dd40dc14-SPP'
 serial_bautrate = 115200
 
 # シリアル等の外部とのデータのやりとりについて1バイトで行う
