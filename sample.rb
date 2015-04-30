@@ -86,7 +86,7 @@ end
 
 # コマンド送信（データの内容チェックなし）
 def send_data(command_data)
-  p command_data
+  #p command_data
   data_str = ""
   for data in command_data
     data_str << data.chr
