@@ -101,7 +101,7 @@ def make_multi_servo_angle_command(angle_data, time)
     command_data.push sid.to_i
 
     # 角度は2バイトなので、ビットシフト処理などを行う(コマンドリファレンス参照)
-    deg = angle * 10
+    deg = (angle * 10).round
     command_data.push (deg << 1) & 0x00ff #DEG_L
     command_data.push (((deg << 1) >> 8) << 1) & 0x00ff #DEG_H
   }
@@ -191,9 +191,9 @@ loop do
   for num in 0..(motions.length - 1) do
     print num, ": ", motions[num]["name"], "\n"
   end
-  print '0-', motions.length - 1, "(9:exit): "
+  print '0-', motions.length - 1, "(99:exit): "
   key = STDIN.gets.to_i
-  if (0..8).include? key
+  if (0..(motions.length - 1)).include? key
     print motions[key]["name"], "\n"
     motions[key]["pose_list"].each{|pose_data|
       print "pose:", pose_data["pose_id"], "\n"
@@ -203,7 +203,7 @@ loop do
       send_data(make_multi_servo_angle_command(pose_data["servo"], time))
       sleep time / 100.0
     }
-  elsif key == 9
+  elsif key == 99
     $sp.close
     puts 'connection closed.'
     exit 0
