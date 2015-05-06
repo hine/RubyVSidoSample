@@ -43,7 +43,7 @@ puts 'connected.'
 # モーションデータの読み込み
 print "Loading motion file..."
 begin
-  motion_data = open(motion_file).read
+  motion_file_data = open(motion_file).read
 rescue => e
   STDERR.puts 'cannot open motion file.'
   STDERR.puts e.to_s
@@ -55,13 +55,14 @@ puts 'loaded.'
 # モーションデータのJSON解釈
 print "Parsing JSON data..."
 begin
-  motions = JSON.parse(motion_data).sort_by{|k, v| v}
+  motion_data = JSON.parse(motion_file_data);
 rescue => e
   STDERR.puts 'JSON error in  motion file.'
   STDERR.puts e.to_s
   exit 1
 end
 
+motions = motion_data["motion_list"].sort_by{|k, v| v}
 print motions.length, " motions loaded\n"
 
 # シリアル受信スレッド立ち上げ
@@ -182,8 +183,11 @@ def send_data(command_data)
 end
 
 # PWMの利用開始
+puts 'use PWM...'
 send_data(make_set_vid_command(0x05, 0x01));
 sleep 0.5
+
+puts ''
 
 # メインループ
 loop do
@@ -200,7 +204,7 @@ loop do
       time = (motions[key]["time_multiple"] * pose_data["time"] * 100).round
       send_data(make_pwm_command(0x07, (750 + (1500 * pose_data["led"] / 100.0).round)))
       sleep 0.1
-      send_data(make_multi_servo_angle_command(pose_data["servo"], time))
+      send_data(make_multi_servo_angle_command(motion_data["servo_offset"].merge(pose_data["servo"]){|key, v0, v1|v0 + v1}, time))
       sleep time / 100.0
     }
   elsif key == 99
