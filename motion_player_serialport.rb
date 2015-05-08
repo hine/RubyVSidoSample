@@ -72,18 +72,13 @@ Thread.new{
     recieve = $sp.getc
     if recieve.unpack("H*")[0] == "ff"
       buffer = []
-      print("< ")
     end
     buffer.push(recieve.unpack("H*")[0])
-    print(recieve.unpack("H*")[0])
+    #print(recieve.unpack("H*")[0])
     if buffer.length > 3
       if buffer.length == buffer[2].to_i
-        print("\n")
-      else
-        print(" ")
+        print "< ", buffer.join(" "), "\n"
       end
-    else
-      print(" ")
     end
   end
 }
@@ -107,7 +102,7 @@ def make_multi_servo_angle_command(angle_data, time)
     command_data.push (((deg << 1) >> 8) << 1) & 0x00ff #DEG_H
   }
   command_data.push 0x00 #sum
-  
+
   command_data[2] = command_data.size
 
   # チェックサム生成
@@ -169,17 +164,15 @@ end
 def send_data(command_data)
   #p command_data
   data_str = ""
+  data_array = []
   for data in command_data
     data_str << data.chr
+    data_array.push data.chr.unpack("H*")[0]
   end
-  $sp.puts data_str
-  $sp.flush
-  print("> ")
-  for data in command_data
-    print data.chr.unpack("H*")[0]
-    print " "
-  end
-  print "\n"
+  $sp.write data_str
+  #$sp.puts data_str
+  #$sp.flush
+  print "> ", data_array.join(" "), "\n"
 end
 
 # PWMの利用開始
@@ -211,7 +204,7 @@ loop do
     $sp.close
     puts 'connection closed.'
     exit 0
-  end  
+  end
 end
 
 $sp.close
