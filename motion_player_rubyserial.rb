@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 require 'rubygems'
-#require 'serialport'
 require 'rubyserial'
 require 'json'
 
 # コマンド
 COMMAND_ST = 0xff
+COMMAND_ST_I2C = 0x0c
 COMMAND_OP_ANGLE = 0x6f
 COMMAND_OP_PWM = 0x70
 COMMAND_OP_SET_VID = 0x73
@@ -163,6 +163,29 @@ def make_pwm_command(pin, duty)
   return command_data
 end
 
+# PWM変更コマンド生成
+def make_i2c_pt_command(i2c_address, reg_address, i2c_data)
+  command_data = []
+  command_data.push COMMAND_ST_I2C
+  command_data.push 0x00 #LN
+  command_data.push i2c_address
+  command_data.push reg_address
+  command_data.push i2c_data
+  command_data.push 0x00 #sum
+
+  command_data[1] = command_data.size
+
+  # チェックサム生成
+  sum = 0
+  for data in command_data
+    sum ^= data
+  end
+  command_data[command_data.size - 1] = sum
+
+  return command_data
+end
+
+
 # コマンド送信（データの内容チェックなし）
 def send_data(command_data)
   #p command_data
@@ -198,6 +221,10 @@ loop do
       time = (motions[key]["time_multiple"] * pose_data["time"] * 100).round
       send_data(make_pwm_command(0x07, (750 + (1500 * pose_data["led"] / 100.0).round)))
       sleep 0.1
+      if !pose_data["sound"].nil?
+        send_data(make_i2c_pt_command(0x09, 0x70, pose_data["sound"]))
+        sleep 0.1
+      end
       send_data(make_multi_servo_angle_command(motion_data["servo_offset"].merge(pose_data["servo"]){|key, v0, v1|v0 + v1}, time))
       sleep time / 100.0
     }
